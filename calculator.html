@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propellant Calculator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        .main-content {
+            width: 900px;
+            max-width: 900px;
+        }
+        .side-panel {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .side-panel-card {
+            background: #16213e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+        .side-panel-card h3 {
+            margin: 0 0 15px 0;
+            color: #00d4ff;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .side-panel-card .input-group {
+            margin-bottom: 12px;
+        }
+        .side-panel-card label {
+            font-size: 12px;
+        }
+        .side-panel-card input,
+        .side-panel-card select {
+            padding: 8px;
+            font-size: 14px;
+        }
+        .side-panel-card button {
+            padding: 10px;
+            font-size: 14px;
+        }
+        .side-panel-result {
+            margin-top: 12px;
+            padding: 12px;
+            background: #0f3460;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+        .side-panel-result.show {
+            display: block;
+        }
+        .side-panel-result .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        .side-panel-result .label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .apply-btn {
+            margin-top: 10px;
+            background: linear-gradient(135deg, #4ecdc4, #2d9a93) !important;
+        }
+        .apply-btn:hover {
+            box-shadow: 0 4px 15px rgba(78,205,196,0.4) !important;
+        }
+        @media (max-width: 1200px) {
+            body {
+                flex-direction: column;
+            }
+            .side-panel {
+                width: 100%;
+                position: static;
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+            }
+            .side-panel-card {
+                flex: 1;
+                min-width: 250px;
+            }
+        }
+        h1, h2 {
+            text-align: center;
+            color: #00d4ff;
+        }
+        h2 {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #0f3460;
+        }
+        .calculator {
+            background: #16213e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #aaa;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #0f3460;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #1a1a2e;
+            color: #fff;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #00d4ff;
+        }
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row .input-group {
+            flex: 1;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,212,255,0.4);
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background: #0f3460;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .result-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        .result-unit {
+            font-size: 18px;
+            color: #aaa;
+        }
+        .result-details {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+            text-align: left;
+        }
+        .result-details div {
+            padding: 5px 0;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .warning {
+            margin-top: 20px;
+            padding: 15px;
+            background: #4a1c1c;
+            border-left: 4px solid #ff4444;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #ffaaaa;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #1c3a4a;
+            border-left: 4px solid #00d4ff;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .graph-container {
+            margin-top: 25px;
+            background: #0a0a15;
+            border-radius: 8px;
+            padding: 20px;
+            display: none;
+        }
+        .graph-container.show {
+            display: block;
+        }
+        canvas {
+            width: 100%;
+            height: 350px;
+            background: #0a0a15;
+            border-radius: 4px;
+        }
+        .graph-legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: #0f3460;
+            border: none;
+            border-radius: 8px;
+            color: #888;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #000;
+            font-weight: 600;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .burst-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 8px;
+            border: 1px solid #1a4a7a;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #ff6b6b;
+        }
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #ff6b6b;
+        }
+        .burst-options {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #1a4a7a;
+        }
+        .burst-options.show {
+            display: block;
+        }
+        .burst-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #1a1a2e;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #aaa;
+        }
+        .burst-info .burst-pressure {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ff6b6b;
+        }
+        .burst-warning {
+            margin-top: 10px;
+            padding: 10px;
+            background: #4a1c1c;
+            border-left: 3px solid #ff4444;
+            border-radius: 4px;
+            color: #ffaaaa;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+    <h1>Propellant Calculator</h1>
+
+    <div class="tabs">
+        <button class="tab" onclick="switchTab('ballistic')">Ballistic Simulation</button>
+    </div>
+
+    <!-- Ballistic Simulation -->
+    <div id="ballistic-tab" class="tab-content">
+        <div class="calculator">
+            <h3 style="margin-top: 0; color: #00d4ff;">Chamber & Barrel</h3>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="boreDiameter">Bore Diameter</label>
+                    <input type="number" id="boreDiameter" placeholder="e.g., 9" step="any" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="boreDiameterUnit">Unit</label>
+                    <select id="boreDiameterUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="in">inches</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="chamberLength">Chamber Length (behind projectile)</label>
+                    <input type="number" id="chamberLength" placeholder="e.g., 20" step="any" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="chamberLengthUnit">Unit</label>
+                    <select id="chamberLengthUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="in">inches</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="barrelLength">Barrel Length (projectile travel)</label>
+                    <input type="number" id="barrelLength" placeholder="e.g., 100" step="any" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="barrelLengthUnit">Unit</label>
+                    <select id="barrelLengthUnit">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="in">inches</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3 style="color: #00d4ff;">Projectile</h3>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="projectileMass">Projectile Mass</label>
+                    <input type="number" id="projectileMass" placeholder="e.g., 8" step="any" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="projectileMassUnit">Unit</label>
+                    <select id="projectileMassUnit">
+                        <option value="g">grams</option>
+                        <option value="kg">kilograms</option>
+                        <option value="gr">grains</option>
+                        <option value="oz">ounces</option>
+                    </select>
+                </div>
+            </div>
+
+            <h3 style="color: #00d4ff;">Propellant</h3>
+
+            <div class="row">
+                <div class="input-group">
+                    <label for="propellantMass">Propellant Mass</label>
+                    <input type="number" id="propellantMass" placeholder="e.g., 0.5" step="any" min="0">
+                </div>
+                <div class="input-group">
+                    <label for="propellantMassUnit">Unit</label>
+                    <select id="propellantMassUnit">
+                        <option value="g">grams</option>
+                        <option value="mg">milligrams</option>
+                        <option value="gr">grains</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="propellantTypeBallistic">Propellant Type</label>
+                <select id="propellantTypeBallistic">
+                    <option value="950">Single-base NC (F = 950 kJ/kg)</option>
+                    <option value="1050">Double-base NC/NG (F = 1050 kJ/kg)</option>
+                    <option value="1150">Triple-base (F = 1150 kJ/kg)</option>
+                    <option value="custom">Custom Force Constant</option>
+                </select>
+            </div>
+
+            <div class="input-group" id="customForceGroupBallistic" style="display: none;">
+                <label for="customForceBallistic">Custom Force Constant (kJ/kg)</label>
+                <input type="number" id="customForceBallistic" placeholder="e.g., 1000" step="any" min="0">
+            </div>
+
+            <div class="input-group">
+                <label for="burnRate">Burn Rate Profile</label>
+                <select id="burnRate">
+                    <option value="fast">Fast (pistol powder)</option>
+                    <option value="medium">Medium (rifle powder)</option>
+                    <option value="slow">Slow (magnum powder)</option>
+                    <option value="instant">Instantaneous (theoretical)</option>
+                </select>
+            </div>
+
+            <div class="burst-section">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="burstEnabled" onchange="toggleBurstSection()" checked>
+                    <span>Burst Pressure Enabled</span>
+                </label>
+                <div class="burst-options" id="burstOptions">
+                    <div class="row">
+                        <div class="input-group">
+                            <label for="wallThickness">Wall Thickness</label>
+                            <input type="number" id="wallThickness" placeholder="e.g., 2" step="any" min="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="wallThicknessUnit">Unit</label>
+                            <select id="wallThicknessUnit">
+                                <option value="mm">mm</option>
+                                <option value="cm">cm</option>
+                                <option value="in">inches</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="metalType">Material</label>
+                        <select id="metalType">
+                            <option value="304">304 Stainless Steel (515 MPa UTS)</option>
+                            <option value="316">316 Stainless Steel (485 MPa UTS)</option>
+                            <option value="mild">Mild Steel A36 (400 MPa UTS)</option>
+                            <option value="4140">4140 Chrome-Moly Steel (655 MPa UTS)</option>
+                            <option value="4340">4340 Alloy Steel (745 MPa UTS)</option>
+                            <option value="6061">6061-T6 Aluminum (310 MPa UTS)</option>
+                            <option value="7075">7075-T6 Aluminum (572 MPa UTS)</option>
+                            <option value="copper">Copper (220 MPa UTS)</option>
+                            <option value="titanium">Titanium Grade 5 (950 MPa UTS)</option>
+                            <option value="glass">Glass (50 MPa UTS)</option>
+                            <option value="paper">Paper (20 MPa UTS)</option>
+                            <option value="densecard">Dense Card (15 MPa UTS)</option>
+                            <option value="plastic">Plastic (40 MPa UTS)</option>
+                            <option value="wood">Wood (40 MPa UTS)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="safetyFactor">Safety Factor</label>
+                        <select id="safetyFactor">
+                            <option value="1.0">1.0 (Theoretical burst)</option>
+                            <option value="1.5">1.5 (Minimal safety)</option>
+                            <option value="2.0" selected>2.0 (Standard)</option>
+                            <option value="3.0">3.0 (Conservative)</option>
+                            <option value="4.0">4.0 (High safety)</option>
+                        </select>
+                    </div>
+                    <div class="burst-info" id="burstInfo"></div>
+                </div>
+            </div>
+
+            <button onclick="runSimulation()">Run Simulation</button>
+
+            <div class="graph-container" id="graphContainer">
+                <h4 style="margin: 0 0 10px 0; color: #888;">Pressure vs Position</h4>
+                <canvas id="pressureGraph"></canvas>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00d4ff;"></div>
+                        <span>Pressure</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Velocity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4ecdc4;"></div>
+                        <span>Burn Fraction</span>
+                    </div>
+                </div>
+
+                <h4 style="margin: 30px 0 10px 0; color: #888;">Pressure vs Time</h4>
+                <canvas id="pressureTimeGraph"></canvas>
+                <div class="graph-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00d4ff;"></div>
+                        <span>Pressure</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Velocity</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffd93d;"></div>
+                        <span>Position</span>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="peakPressure">-</div>
+                        <div class="stat-label">Peak Pressure (MPa)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="muzzleVelocity">-</div>
+                        <div class="stat-label">Muzzle Velocity (m/s)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="muzzlePressure">-</div>
+                        <div class="stat-label">Muzzle Pressure (MPa)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="peakPosition">-</div>
+                        <div class="stat-label">Peak Pressure Position (mm)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="barrelTime">-</div>
+                        <div class="stat-label">Barrel Time (ms)</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="muzzleEnergy">-</div>
+                        <div class="stat-label">Muzzle Energy (J)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info">
+                <strong>Model:</strong> Uses the Lagrange approximation for gas dynamics with progressive burn rate
+                (dm/dt ∝ P^n). The simulation accounts for propellant covolume and gas acceleration effects.
+            </div>
+
+            <div class="warning">
+                <strong>Warning:</strong> This is a simplified model for educational purposes. Real internal ballistics
+                involve complex factors not modeled here including heat transfer, friction, rifling effects, and
+                non-ideal gas behavior.
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- Side Panel -->
+    <div class="side-panel">
+        <div class="side-panel-card">
+            <h3>Optimal Barrel Length</h3>
+            <p style="font-size: 12px; color: #888; margin: 0 0 12px 0;">Find the barrel length for maximum velocity based on current inputs.</p>
+            <div class="input-group">
+                <label for="maxBarrelSearch">Max Search Length</label>
+                <div class="row">
+                    <input type="number" id="maxBarrelSearch" value="500" step="any" min="0" style="flex: 1;">
+                    <select id="maxBarrelSearchUnit" style="width: 70px;">
+                        <option value="mm">mm</option>
+                        <option value="cm">cm</option>
+                        <option value="in">in</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="findOptimalBarrel()">Find Optimal</button>
+            <div class="side-panel-result" id="optimalBarrelResult">
+                <div class="value" id="optimalBarrelValue">-</div>
+                <div class="label">Optimal Barrel Length (mm)</div>
+                <div style="margin-top: 8px; font-size: 12px;">
+                    <span style="color: #888;">Velocity:</span> <span id="optimalVelocity" style="color: #ff6b6b;">-</span> m/s
+                </div>
+                <button class="apply-btn" onclick="applyOptimalBarrel()">Apply to Inputs</button>
+            </div>
+        </div>
+
+        <div class="side-panel-card">
+            <h3>Max Safe Powder</h3>
+            <p style="font-size: 12px; color: #888; margin: 0 0 12px 0;">Calculate max powder for 90% of burst pressure limit.</p>
+            <div class="input-group">
+                <label for="burstPercent">Target % of Burst</label>
+                <input type="number" id="burstPercent" value="90" step="1" min="1" max="100">
+            </div>
+            <button onclick="calcMaxPowder()">Calculate</button>
+            <div class="side-panel-result" id="maxPowderResult">
+                <div class="value" id="maxPowderValue">-</div>
+                <div class="label" id="maxPowderUnit">Max Powder (g)</div>
+                <div style="margin-top: 8px; font-size: 12px;">
+                    <span style="color: #888;">Peak Pressure:</span> <span id="maxPowderPressure" style="color: #ff6b6b;">-</span> MPa
+                </div>
+                <button class="apply-btn" onclick="applyMaxPowder()">Apply to Inputs</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Unit conversion factors
+        const lengthToMeters = { mm: 0.001, cm: 0.01, in: 0.0254 };
+        const pressureToPascals = { MPa: 1e6, bar: 1e5, psi: 6894.76, atm: 101325 };
+        const massToKg = { kg: 1, g: 0.001, mg: 1e-6, gr: 0.0000647989, oz: 0.0283495 };
+
+        // Propellant properties
+        const covolume = 0.001; // m³/kg - typical for NC propellants
+        const gamma = 1.25; // Ratio of specific heats for propellant gases
+        const STP = 101325; // Standard pressure in Pa (1 atm)
+
+        // Material Ultimate Tensile Strength (MPa)
+        const materialUTS = {
+            '304': 515,
+            '316': 485,
+            'mild': 400,
+            '4140': 655,
+            '4340': 745,
+            '6061': 310,
+            '7075': 572,
+            'copper': 220,
+            'titanium': 950,
+            'glass': 50,
+            'paper': 20,
+            'densecard': 15,
+            'plastic': 40,
+            'wood': 40
+        };
+
+        // Burn rate parameters (a * P^n) - calibrated for realistic burn times
+        const burnRates = {
+            fast: { a: 0.08, n: 0.70 },
+            medium: { a: 0.04, n: 0.75 },
+            slow: { a: 0.02, n: 0.80 },
+            instant: { a: 1, n: 0 }
+        };
+
+        // Store calculated optimal values for applying to inputs
+        let calculatedOptimalBarrel = null;
+        let calculatedMaxPowder = null;
+
+        // Quick simulation function for optimization (returns muzzle velocity)
+        function quickSim(barrelLengthM) {
+            const boreDiameter = parseFloat(document.getElementById('boreDiameter').value);
+            const chamberLength = parseFloat(document.getElementById('chamberLength').value);
+            const projectileMass = parseFloat(document.getElementById('projectileMass').value);
+            const propellantMass = parseFloat(document.getElementById('propellantMass').value);
+
+            const boreDiameterUnit = document.getElementById('boreDiameterUnit').value;
+            const chamberLengthUnit = document.getElementById('chamberLengthUnit').value;
+            const projectileMassUnit = document.getElementById('projectileMassUnit').value;
+            const propellantMassUnit = document.getElementById('propellantMassUnit').value;
+
+            const propellantType = document.getElementById('propellantTypeBallistic').value;
+            const burnRateType = document.getElementById('burnRate').value;
+
+            if ([boreDiameter, chamberLength, projectileMass, propellantMass].some(v => isNaN(v) || v <= 0)) {
+                return null;
+            }
+
+            const d = boreDiameter * lengthToMeters[boreDiameterUnit];
+            const L0 = chamberLength * lengthToMeters[chamberLengthUnit];
+            const mp = projectileMass * massToKg[projectileMassUnit];
+            const mc = propellantMass * massToKg[propellantMassUnit];
+
+            let F;
+            if (propellantType === 'custom') {
+                F = parseFloat(document.getElementById('customForceBallistic').value) * 1000;
+                if (isNaN(F) || F <= 0) return null;
+            } else {
+                F = parseFloat(propellantType) * 1000;
+            }
+
+            const A = Math.PI * (d / 2) ** 2;
+            const V0 = A * L0;
+            const burn = burnRates[burnRateType];
+            const dt = 1e-7;
+            const maxTime = 0.1;
+            const mEff = mp + mc / 3;
+
+            let t = 0, x = 0, v = 0, z = 0.01;
+            let burnoutComplete = false, burnoutPressure = 0, burnoutVolume = 0;
+            let peakPressure = 0;
+
+            while (x < barrelLengthM && t < maxTime) {
+                const V = V0 + A * x;
+                const mBurned = z * mc;
+
+                let P;
+                if (!burnoutComplete) {
+                    const freeVolume = V - mBurned * covolume;
+                    P = (freeVolume > 0 && mBurned > 0) ? (mBurned * F) / freeVolume : 0;
+                } else {
+                    const freeVolume = V - mc * covolume;
+                    const burnoutFreeVolume = burnoutVolume - mc * covolume;
+                    P = burnoutPressure * Math.pow(burnoutFreeVolume / freeVolume, gamma);
+                }
+
+                if (P > peakPressure) peakPressure = P;
+
+                if (z < 1) {
+                    const P_MPa = P / 1e6;
+                    const dz = burn.a * Math.pow(Math.max(P_MPa, 0.1), burn.n) * dt * 1000;
+                    z = Math.min(1, z + dz);
+                    if (z >= 1 && !burnoutComplete) {
+                        burnoutComplete = true;
+                        burnoutPressure = P;
+                        burnoutVolume = V;
+                    }
+                }
+
+                // Friction model matching main simulation
+                const frictionPressure = 2e6;
+                const dragCoeff = 0.1;
+                const effectivePressure = Math.max(0, P - frictionPressure - dragCoeff * v * 1000);
+                const a = (effectivePressure * A) / mEff;
+                v += a * dt;
+                if (v < 0) v = 0;
+                x += v * dt;
+                t += dt;
+            }
+
+            return { velocity: v, peakPressure: peakPressure };
+        }
+
+        // Find optimal barrel length using golden section search
+        function findOptimalBarrel() {
+            const maxSearch = parseFloat(document.getElementById('maxBarrelSearch').value);
+            const maxSearchUnit = document.getElementById('maxBarrelSearchUnit').value;
+
+            if (isNaN(maxSearch) || maxSearch <= 0) {
+                alert('Please enter a valid max search length.');
+                return;
+            }
+
+            const maxSearchM = maxSearch * lengthToMeters[maxSearchUnit];
+            const minSearchM = 0.001; // 1mm minimum
+
+            // Golden section search for optimal barrel length
+            const phi = (1 + Math.sqrt(5)) / 2;
+            let a = minSearchM, b = maxSearchM;
+            let c = b - (b - a) / phi;
+            let d = a + (b - a) / phi;
+
+            const tolerance = 0.0001; // 0.1mm tolerance
+            let iterations = 0;
+            const maxIterations = 50;
+
+            // First, do a coarse search to find the region of interest
+            let bestVel = 0, bestLen = 0;
+            for (let len = minSearchM; len <= maxSearchM; len += maxSearchM / 20) {
+                const result = quickSim(len);
+                if (result && result.velocity > bestVel) {
+                    bestVel = result.velocity;
+                    bestLen = len;
+                }
+            }
+
+            if (bestVel === 0) {
+                alert('Could not find optimal barrel. Please check your inputs in the Ballistic Simulation tab.');
+                return;
+            }
+
+            // Fine search around best found length
+            a = Math.max(minSearchM, bestLen - maxSearchM / 10);
+            b = Math.min(maxSearchM, bestLen + maxSearchM / 10);
+
+            // Binary search for where velocity gain becomes minimal
+            let prevVel = 0;
+            let optimalLen = minSearchM;
+            let optimalVel = 0;
+
+            for (let len = minSearchM; len <= maxSearchM; len += maxSearchM / 100) {
+                const result = quickSim(len);
+                if (!result) continue;
+
+                const vel = result.velocity;
+                const gain = vel - prevVel;
+
+                if (vel > optimalVel) {
+                    optimalVel = vel;
+                    optimalLen = len;
+                }
+
+                // If velocity gain per unit length drops significantly, we're past optimal
+                if (prevVel > 0 && gain < 0) {
+                    break;
+                }
+                prevVel = vel;
+            }
+
+            calculatedOptimalBarrel = optimalLen * 1000; // Store in mm
+
+            document.getElementById('optimalBarrelValue').textContent = calculatedOptimalBarrel.toFixed(1);
+            document.getElementById('optimalVelocity').textContent = optimalVel.toFixed(1);
+            document.getElementById('optimalBarrelResult').classList.add('show');
+        }
+
+        function applyOptimalBarrel() {
+            if (calculatedOptimalBarrel === null) return;
+
+            document.getElementById('barrelLength').value = calculatedOptimalBarrel.toFixed(1);
+            document.getElementById('barrelLengthUnit').value = 'mm';
+
+            // Flash the input to show it was updated
+            const input = document.getElementById('barrelLength');
+            input.style.borderColor = '#4ecdc4';
+            setTimeout(() => { input.style.borderColor = ''; }, 1000);
+        }
+
+        // Calculate max powder for target % of burst pressure
+        function calcMaxPowder() {
+            const burstEnabled = document.getElementById('burstEnabled').checked;
+            if (!burstEnabled) {
+                alert('Please enable Burst Pressure in the Ballistic Simulation tab and configure the material settings.');
+                return;
+            }
+
+            const targetPercent = parseFloat(document.getElementById('burstPercent').value) / 100;
+            if (isNaN(targetPercent) || targetPercent <= 0 || targetPercent > 1) {
+                alert('Please enter a valid percentage (1-100).');
+                return;
+            }
+
+            // Get burst pressure
+            const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+            const wallThicknessUnit = document.getElementById('wallThicknessUnit').value;
+            const metalType = document.getElementById('metalType').value;
+            const safetyFactor = parseFloat(document.getElementById('safetyFactor').value);
+            const boreDiameter = parseFloat(document.getElementById('boreDiameter').value);
+            const boreDiameterUnit = document.getElementById('boreDiameterUnit').value;
+            const chamberLength = parseFloat(document.getElementById('chamberLength').value);
+            const chamberLengthUnit = document.getElementById('chamberLengthUnit').value;
+
+            if (isNaN(wallThickness) || isNaN(boreDiameter) || isNaN(chamberLength) ||
+                wallThickness <= 0 || boreDiameter <= 0 || chamberLength <= 0) {
+                alert('Please fill in bore diameter, chamber length, and wall thickness.');
+                return;
+            }
+
+            const t = wallThickness * lengthToMeters[wallThicknessUnit];
+            const d = boreDiameter * lengthToMeters[boreDiameterUnit];
+            const L0 = chamberLength * lengthToMeters[chamberLengthUnit];
+            const r = d / 2;
+            const uts = materialUTS[metalType] * 1e6;
+
+            const burstPressure = (uts * t) / (r * safetyFactor);
+            const targetPressure = burstPressure * targetPercent;
+
+            // Get force constant
+            const propellantType = document.getElementById('propellantTypeBallistic').value;
+            let F;
+            if (propellantType === 'custom') {
+                F = parseFloat(document.getElementById('customForceBallistic').value) * 1000;
+                if (isNaN(F) || F <= 0) {
+                    alert('Please enter a valid force constant.');
+                    return;
+                }
+            } else {
+                F = parseFloat(propellantType) * 1000;
+            }
+
+            const A = Math.PI * r * r;
+            const V0 = A * L0;
+
+            // For closed vessel at peak pressure (assuming complete burn):
+            // P = (m * F) / (V0 - m * covolume)
+            // Solving for m: m = (P * V0) / (F + P * covolume)
+            const maxMassKg = (targetPressure * V0) / (F + targetPressure * covolume);
+            const maxMassG = maxMassKg * 1000;
+
+            // Verify with simulation
+            const propellantMassUnit = document.getElementById('propellantMassUnit').value;
+            const originalMass = document.getElementById('propellantMass').value;
+
+            // Temporarily set mass to verify
+            document.getElementById('propellantMass').value = maxMassG;
+            document.getElementById('propellantMassUnit').value = 'g';
+
+            const barrelLength = parseFloat(document.getElementById('barrelLength').value) || 100;
+            const barrelLengthUnit = document.getElementById('barrelLengthUnit').value;
+            const barrelLengthM = barrelLength * lengthToMeters[barrelLengthUnit];
+
+            const simResult = quickSim(barrelLengthM);
+
+            // Restore original mass
+            document.getElementById('propellantMass').value = originalMass;
+            document.getElementById('propellantMassUnit').value = propellantMassUnit;
+
+            const actualPeakMPa = simResult ? simResult.peakPressure / 1e6 : targetPressure / 1e6;
+
+            calculatedMaxPowder = { value: maxMassG, unit: 'g' };
+
+            document.getElementById('maxPowderValue').textContent = maxMassG < 1 ? (maxMassG * 1000).toFixed(2) : maxMassG.toFixed(3);
+            document.getElementById('maxPowderUnit').textContent = maxMassG < 1 ? 'Max Powder (mg)' : 'Max Powder (g)';
+            document.getElementById('maxPowderPressure').textContent = actualPeakMPa.toFixed(1);
+            document.getElementById('maxPowderResult').classList.add('show');
+        }
+
+        function applyMaxPowder() {
+            if (calculatedMaxPowder === null) return;
+
+            if (calculatedMaxPowder.value < 1) {
+                document.getElementById('propellantMass').value = (calculatedMaxPowder.value * 1000).toFixed(2);
+                document.getElementById('propellantMassUnit').value = 'mg';
+            } else {
+                document.getElementById('propellantMass').value = calculatedMaxPowder.value.toFixed(3);
+                document.getElementById('propellantMassUnit').value = 'g';
+            }
+
+            // Flash the input
+            const input = document.getElementById('propellantMass');
+            input.style.borderColor = '#4ecdc4';
+            setTimeout(() => { input.style.borderColor = ''; }, 1000);
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`.tab:nth-child(${tab === 'static' ? 1 : 2})`).classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+
+        function toggleBurstSection() {
+            const enabled = document.getElementById('burstEnabled').checked;
+            const options = document.getElementById('burstOptions');
+            if (enabled) {
+                options.classList.add('show');
+                updateBurstInfo();
+            } else {
+                options.classList.remove('show');
+            }
+        }
+
+        function updateBurstInfo() {
+            const burstEnabled = document.getElementById('burstEnabled').checked;
+            if (!burstEnabled) return;
+
+            const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+            const wallThicknessUnit = document.getElementById('wallThicknessUnit').value;
+            const metalType = document.getElementById('metalType').value;
+            const safetyFactor = parseFloat(document.getElementById('safetyFactor').value);
+            const boreDiameter = parseFloat(document.getElementById('boreDiameter').value);
+            const boreDiameterUnit = document.getElementById('boreDiameterUnit').value;
+
+            const infoDiv = document.getElementById('burstInfo');
+
+            if (isNaN(wallThickness) || isNaN(boreDiameter) || wallThickness <= 0 || boreDiameter <= 0) {
+                infoDiv.innerHTML = '<span style="color: #888;">Enter wall thickness and bore diameter to calculate burst pressure.</span>';
+                return;
+            }
+
+            const t = wallThickness * lengthToMeters[wallThicknessUnit];
+            const d = boreDiameter * lengthToMeters[boreDiameterUnit];
+            const r = d / 2; // Inner radius
+            const uts = materialUTS[metalType] * 1e6; // Convert MPa to Pa
+
+            // Thin-wall hoop stress: σ = P * r / t
+            // Burst when σ = UTS, so P_burst = UTS * t / r
+            const burstPressure = (uts * t) / (r * safetyFactor);
+            const burstMPa = burstPressure / 1e6;
+            const burstPsi = burstPressure / 6894.76;
+
+            infoDiv.innerHTML = `
+                <div>Calculated Burst Pressure (with ${safetyFactor}x safety factor):</div>
+                <div class="burst-pressure">${burstMPa.toFixed(1)} MPa (${burstPsi.toFixed(0)} psi)</div>
+                <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                    Formula: P = (UTS × wall thickness) / (radius × safety factor)
+                </div>
+            `;
+        }
+
+        // Update burst info when inputs change
+        ['wallThickness', 'wallThicknessUnit', 'metalType', 'safetyFactor', 'boreDiameter', 'boreDiameterUnit'].forEach(id => {
+            document.getElementById(id)?.addEventListener('change', updateBurstInfo);
+            document.getElementById(id)?.addEventListener('input', updateBurstInfo);
+        });
+
+        document.getElementById('propellantTypeBallistic').addEventListener('change', function() {
+            document.getElementById('customForceGroupBallistic').style.display =
+                this.value === 'custom' ? 'block' : 'none';
+        });
+
+        function calculateStatic() {
+            const diameter = parseFloat(document.getElementById('diameter').value);
+            const length = parseFloat(document.getElementById('length').value);
+            const pressure = parseFloat(document.getElementById('pressure').value);
+
+            const diameterUnit = document.getElementById('diameterUnit').value;
+            const lengthUnit = document.getElementById('lengthUnit').value;
+            const pressureUnit = document.getElementById('pressureUnit').value;
+            const propellantType = document.getElementById('propellantType').value;
+
+            if (isNaN(diameter) || isNaN(length) || isNaN(pressure) ||
+                diameter <= 0 || length <= 0 || pressure <= 0) {
+                alert('Please enter valid positive numbers for all fields.');
+                return;
+            }
+
+            let forceConstant;
+            if (propellantType === 'custom') {
+                forceConstant = parseFloat(document.getElementById('customForce').value) * 1000;
+                if (isNaN(forceConstant) || forceConstant <= 0) {
+                    alert('Please enter a valid force constant.');
+                    return;
+                }
+            } else {
+                forceConstant = parseFloat(propellantType) * 1000;
+            }
+
+            const diameterM = diameter * lengthToMeters[diameterUnit];
+            const lengthM = length * lengthToMeters[lengthUnit];
+            const pressurePa = pressure * pressureToPascals[pressureUnit];
+
+            const radius = diameterM / 2;
+            const volumeM3 = Math.PI * radius * radius * lengthM;
+            const volumeCm3 = volumeM3 * 1e6;
+
+            const massKg = (pressurePa * volumeM3) / forceConstant;
+            const massGrams = massKg * 1000;
+
+            const loadingDensity = massKg / volumeM3;
+            const loadingDensityGcc = loadingDensity / 1000;
+
+            const resultDiv = document.getElementById('result');
+            const resultValue = document.getElementById('resultValue');
+            const resultUnit = document.getElementById('resultUnit');
+            const resultDetails = document.getElementById('resultDetails');
+
+            resultDiv.classList.add('show');
+
+            if (massGrams >= 1000) {
+                resultValue.textContent = (massGrams / 1000).toFixed(3);
+                resultUnit.textContent = 'kilograms';
+            } else if (massGrams >= 1) {
+                resultValue.textContent = massGrams.toFixed(3);
+                resultUnit.textContent = 'grams';
+            } else {
+                resultValue.textContent = (massGrams * 1000).toFixed(3);
+                resultUnit.textContent = 'milligrams';
+            }
+
+            resultDetails.innerHTML = `
+                <div><strong>Chamber Volume:</strong> ${volumeCm3.toFixed(4)} cm³</div>
+                <div><strong>Pressure:</strong> ${(pressurePa / 1e6).toFixed(2)} MPa (${(pressurePa / 6894.76).toFixed(1)} psi)</div>
+                <div><strong>Force Constant:</strong> ${(forceConstant / 1000).toFixed(0)} kJ/kg</div>
+                <div><strong>Loading Density:</strong> ${loadingDensityGcc.toFixed(4)} g/cm³</div>
+            `;
+        }
+
+        function runSimulation() {
+            // Get inputs
+            const boreDiameter = parseFloat(document.getElementById('boreDiameter').value);
+            const chamberLength = parseFloat(document.getElementById('chamberLength').value);
+            const barrelLength = parseFloat(document.getElementById('barrelLength').value);
+            const projectileMass = parseFloat(document.getElementById('projectileMass').value);
+            const propellantMass = parseFloat(document.getElementById('propellantMass').value);
+
+            const boreDiameterUnit = document.getElementById('boreDiameterUnit').value;
+            const chamberLengthUnit = document.getElementById('chamberLengthUnit').value;
+            const barrelLengthUnit = document.getElementById('barrelLengthUnit').value;
+            const projectileMassUnit = document.getElementById('projectileMassUnit').value;
+            const propellantMassUnit = document.getElementById('propellantMassUnit').value;
+
+            const propellantType = document.getElementById('propellantTypeBallistic').value;
+            const burnRateType = document.getElementById('burnRate').value;
+
+            // Validate
+            if ([boreDiameter, chamberLength, barrelLength, projectileMass, propellantMass].some(v => isNaN(v) || v <= 0)) {
+                alert('Please enter valid positive numbers for all fields.');
+                return;
+            }
+
+            // Convert to SI
+            const d = boreDiameter * lengthToMeters[boreDiameterUnit];
+            const L0 = chamberLength * lengthToMeters[chamberLengthUnit];
+            const Lbarrel = barrelLength * lengthToMeters[barrelLengthUnit];
+            const mp = projectileMass * massToKg[projectileMassUnit];
+            const mc = propellantMass * massToKg[propellantMassUnit];
+
+            // Force constant
+            let F;
+            if (propellantType === 'custom') {
+                F = parseFloat(document.getElementById('customForceBallistic').value) * 1000;
+                if (isNaN(F) || F <= 0) {
+                    alert('Please enter a valid force constant.');
+                    return;
+                }
+            } else {
+                F = parseFloat(propellantType) * 1000;
+            }
+
+            // Bore area
+            const A = Math.PI * (d / 2) ** 2;
+
+            // Initial chamber volume
+            const V0 = A * L0;
+
+            // Burn rate params
+            const burn = burnRates[burnRateType];
+
+            // Simulation
+            const dt = 1e-7; // Time step (100 ns)
+            const maxTime = 0.1; // Max simulation time (100 ms)
+
+            let t = 0;
+            let x = 0; // Projectile position
+            let v = 0; // Projectile velocity
+            let z = 0.01; // Burn fraction (0 to 1) - start at 1% to simulate ignition
+
+            const data = {
+                position: [],
+                pressure: [],
+                velocity: [],
+                burnFraction: [],
+                time: [],
+                energy: []
+            };
+
+            let peakPressure = 0;
+            let peakPressurePosition = 0;
+            let lastPressure = 0;
+
+            // Track burnout conditions for adiabatic expansion
+            let burnoutComplete = false;
+            let burnoutPressure = 0;
+            let burnoutVolume = 0;
+
+            // Burst pressure calculation
+            const burstEnabled = document.getElementById('burstEnabled').checked;
+            let burstPressure = Infinity;
+            let hasBurst = false;
+            let burstTime = null;
+            let burstPosition = null;
+
+            if (burstEnabled) {
+                const wallThickness = parseFloat(document.getElementById('wallThickness').value);
+                const wallThicknessUnit = document.getElementById('wallThicknessUnit').value;
+                const metalType = document.getElementById('metalType').value;
+                const safetyFactor = parseFloat(document.getElementById('safetyFactor').value);
+
+                if (!isNaN(wallThickness) && wallThickness > 0) {
+                    const wallT = wallThickness * lengthToMeters[wallThicknessUnit];
+                    const radius = d / 2;
+                    const uts = materialUTS[metalType] * 1e6;
+                    burstPressure = (uts * wallT) / (radius * safetyFactor);
+                }
+            }
+
+            // Effective mass (accounts for gas inertia - Lagrange correction)
+            const mEff = mp + mc / 3;
+
+            while (x < Lbarrel && t < maxTime) {
+                // Current volume (chamber + projectile travel)
+                const V = V0 + A * x;
+
+                // Burned propellant mass
+                const mBurned = z * mc;
+
+                // Calculate pressure
+                let P;
+                if (hasBurst) {
+                    // After burst: gases escape through rupture, no effective pressure
+                    P = 0;
+                } else if (!burnoutComplete) {
+                    // During burn: Nobel-Abel equation P(V - m*η) = m*F
+                    const freeVolume = V - mBurned * covolume;
+                    P = (freeVolume > 0 && mBurned > 0) ? (mBurned * F) / freeVolume : 0;
+                } else {
+                    // After burnout: Adiabatic expansion P*V^γ = constant
+                    const freeVolume = V - mc * covolume;
+                    const burnoutFreeVolume = burnoutVolume - mc * covolume;
+                    P = burnoutPressure * Math.pow(burnoutFreeVolume / freeVolume, gamma);
+                }
+
+                // Check for burst
+                if (!hasBurst && P >= burstPressure) {
+                    hasBurst = true;
+                    burstTime = t;
+                    burstPosition = x;
+                    P = 0; // Gases escape through rupture
+                }
+
+                // Update burn fraction (Vieille's law: burn rate ∝ P^n)
+                if (z < 1) {
+                    const P_MPa = P / 1e6;
+                    const dz = burn.a * Math.pow(Math.max(P_MPa, 0.1), burn.n) * dt * 1000;
+                    z = Math.min(1, z + dz);
+
+                    // Check for burnout
+                    if (z >= 1 && !burnoutComplete) {
+                        burnoutComplete = true;
+                        burnoutPressure = P;
+                        burnoutVolume = V;
+                    }
+                }
+
+                // Acceleration (F = PA = ma) with friction
+                // Friction model: constant friction force + velocity-dependent drag
+                const frictionPressure = 2e6; // ~2 MPa equivalent friction (barrel friction, engraving)
+                const dragCoeff = 0.1; // Velocity-dependent drag coefficient
+                const effectivePressure = Math.max(0, P - frictionPressure - dragCoeff * v * 1000);
+                const a = (effectivePressure * A) / mEff;
+
+                // Update velocity and position
+                v += a * dt;
+                if (v < 0) v = 0; // Projectile can't go backwards
+                x += v * dt;
+                t += dt;
+
+                // Track peak pressure
+                if (P > peakPressure) {
+                    peakPressure = P;
+                    peakPressurePosition = x;
+                }
+                lastPressure = P;
+
+                // Calculate kinetic energy
+                const energy = 0.5 * mp * v * v;
+
+                // Sample data points (every ~0.1mm of travel or every 1000 steps)
+                if (data.position.length === 0 || x - data.position[data.position.length - 1] > 0.0001) {
+                    data.position.push(x);
+                    data.pressure.push(P);
+                    data.velocity.push(v);
+                    data.burnFraction.push(z);
+                    data.time.push(t);
+                    data.energy.push(energy);
+                }
+            }
+
+            // Final values
+            const muzzleVelocity = v;
+            const muzzlePressure = lastPressure;
+            const barrelTime = t;
+            const muzzleEnergy = 0.5 * mp * v * v;
+
+            // Update stats
+            document.getElementById('peakPressure').textContent = (peakPressure / 1e6).toFixed(1);
+            document.getElementById('muzzleVelocity').textContent = muzzleVelocity.toFixed(1);
+            document.getElementById('muzzlePressure').textContent = (muzzlePressure / 1e6).toFixed(2);
+            document.getElementById('peakPosition').textContent = (peakPressurePosition * 1000).toFixed(1);
+            document.getElementById('barrelTime').textContent = (barrelTime * 1000).toFixed(3);
+            document.getElementById('muzzleEnergy').textContent = muzzleEnergy.toFixed(1);
+
+            // Burst data for graphs
+            const burstData = {
+                enabled: burstEnabled,
+                hasBurst: hasBurst,
+                burstTime: burstTime,
+                burstPosition: burstPosition,
+                burstPressure: burstPressure
+            };
+
+            // Show container first so canvas has dimensions
+            document.getElementById('graphContainer').classList.add('show');
+
+            // Draw graphs after container is visible
+            requestAnimationFrame(() => {
+                drawGraph(data, Lbarrel, burstData);
+                drawTimeGraph(data, burstData);
+            });
+        }
+
+        function drawGraph(data, barrelLength, burstData = {}) {
+            const canvas = document.getElementById('pressureGraph');
+            const ctx = canvas.getContext('2d');
+
+            // Set actual canvas size (for sharp rendering)
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+            const padding = { top: 30, right: 60, bottom: 50, left: 70 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            // Clear
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, width, height);
+
+            // Find max values for scaling
+            const maxPressure = Math.max(...data.pressure);
+            const maxVelocity = Math.max(...data.velocity);
+            const maxPosition = barrelLength;
+
+            // Draw grid
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 1;
+
+            // Vertical grid lines
+            for (let i = 0; i <= 10; i++) {
+                const x = padding.left + (i / 10) * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, padding.top);
+                ctx.lineTo(x, height - padding.bottom);
+                ctx.stroke();
+            }
+
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+            }
+
+            // Draw pressure curve
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < data.position.length; i++) {
+                const x = padding.left + (data.position[i] / maxPosition) * graphWidth;
+                const y = padding.top + (1 - data.pressure[i] / maxPressure) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw velocity curve
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < data.position.length; i++) {
+                const x = padding.left + (data.position[i] / maxPosition) * graphWidth;
+                const y = padding.top + (1 - data.velocity[i] / maxVelocity) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw burn fraction curve
+            ctx.strokeStyle = '#4ecdc4';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            for (let i = 0; i < data.position.length; i++) {
+                const x = padding.left + (data.position[i] / maxPosition) * graphWidth;
+                const y = padding.top + (1 - data.burnFraction[i]) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw burst line if applicable
+            if (burstData.hasBurst && burstData.burstPosition !== null) {
+                const burstX = padding.left + (burstData.burstPosition / maxPosition) * graphWidth;
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 4]);
+                ctx.beginPath();
+                ctx.moveTo(burstX, padding.top);
+                ctx.lineTo(burstX, height - padding.bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Burst label
+                ctx.fillStyle = '#ff4444';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('BURST', burstX, padding.top - 8);
+            }
+
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '12px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+
+            // X-axis labels
+            for (let i = 0; i <= 5; i++) {
+                const x = padding.left + (i / 5) * graphWidth;
+                const val = (maxPosition * 1000 * i / 5).toFixed(0);
+                ctx.fillText(val, x, height - padding.bottom + 20);
+            }
+            ctx.fillText('Position (mm)', width / 2, height - 10);
+
+            // Y-axis labels (pressure - left)
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#00d4ff';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                const val = (maxPressure / 1e6 * (5 - i) / 5).toFixed(0);
+                ctx.fillText(val, padding.left - 10, y + 4);
+            }
+
+            // Y-axis labels (velocity - right)
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ff6b6b';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                const velVal = (maxVelocity * (5 - i) / 5).toFixed(0);
+                ctx.fillText(velVal, width - padding.right + 10, y + 4);
+            }
+
+            // Axis titles
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = '#00d4ff';
+            ctx.textAlign = 'center';
+            ctx.fillText('Pressure (MPa)', 0, 0);
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(width - 10, height / 2);
+            ctx.rotate(Math.PI / 2);
+            ctx.fillStyle = '#ff6b6b';
+            ctx.textAlign = 'center';
+            ctx.fillText('Velocity (m/s)', 0, 0);
+            ctx.restore();
+        }
+
+        function drawTimeGraph(data, burstData = {}) {
+            const canvas = document.getElementById('pressureTimeGraph');
+            const ctx = canvas.getContext('2d');
+
+            // Set actual canvas size (for sharp rendering)
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+            const width = rect.width;
+            const height = rect.height;
+            const padding = { top: 30, right: 60, bottom: 50, left: 70 };
+            const graphWidth = width - padding.left - padding.right;
+            const graphHeight = height - padding.top - padding.bottom;
+
+            // Clear
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, width, height);
+
+            // Find max values for scaling
+            const maxPressure = Math.max(...data.pressure);
+            const maxVelocity = Math.max(...data.velocity);
+            const maxPosition = Math.max(...data.position);
+            const maxTime = Math.max(...data.time) * 1000; // Convert to ms
+
+            // Draw grid
+            ctx.strokeStyle = '#1a1a2e';
+            ctx.lineWidth = 1;
+
+            // Vertical grid lines
+            for (let i = 0; i <= 10; i++) {
+                const x = padding.left + (i / 10) * graphWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, padding.top);
+                ctx.lineTo(x, height - padding.bottom);
+                ctx.stroke();
+            }
+
+            // Horizontal grid lines
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(width - padding.right, y);
+                ctx.stroke();
+            }
+
+            // Draw pressure curve
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < data.time.length; i++) {
+                const x = padding.left + (data.time[i] * 1000 / maxTime) * graphWidth;
+                const y = padding.top + (1 - data.pressure[i] / maxPressure) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw velocity curve
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < data.time.length; i++) {
+                const x = padding.left + (data.time[i] * 1000 / maxTime) * graphWidth;
+                const y = padding.top + (1 - data.velocity[i] / maxVelocity) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw position curve
+            ctx.strokeStyle = '#ffd93d';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            for (let i = 0; i < data.time.length; i++) {
+                const x = padding.left + (data.time[i] * 1000 / maxTime) * graphWidth;
+                const y = padding.top + (1 - data.position[i] / maxPosition) * graphHeight;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw burst line if applicable
+            if (burstData.hasBurst && burstData.burstTime !== null) {
+                const burstX = padding.left + (burstData.burstTime * 1000 / maxTime) * graphWidth;
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 4]);
+                ctx.beginPath();
+                ctx.moveTo(burstX, padding.top);
+                ctx.lineTo(burstX, height - padding.bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Burst label
+                ctx.fillStyle = '#ff4444';
+                ctx.font = 'bold 11px -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('BURST', burstX, padding.top - 8);
+            }
+
+            // Labels
+            ctx.fillStyle = '#888';
+            ctx.font = '12px -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+
+            // X-axis labels (time in ms)
+            for (let i = 0; i <= 5; i++) {
+                const x = padding.left + (i / 5) * graphWidth;
+                const val = (maxTime * i / 5).toFixed(2);
+                ctx.fillText(val, x, height - padding.bottom + 20);
+            }
+            ctx.fillText('Time (ms)', width / 2, height - 10);
+
+            // Y-axis labels (pressure - left)
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#00d4ff';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                const val = (maxPressure / 1e6 * (5 - i) / 5).toFixed(0);
+                ctx.fillText(val, padding.left - 10, y + 4);
+            }
+
+            // Y-axis labels (velocity - right)
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#ff6b6b';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (i / 5) * graphHeight;
+                const velVal = (maxVelocity * (5 - i) / 5).toFixed(0);
+                ctx.fillText(velVal, width - padding.right + 10, y + 4);
+            }
+
+            // Axis titles
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = '#00d4ff';
+            ctx.textAlign = 'center';
+            ctx.fillText('Pressure (MPa)', 0, 0);
+            ctx.restore();
+
+            ctx.save();
+            ctx.translate(width - 10, height / 2);
+            ctx.rotate(Math.PI / 2);
+            ctx.fillStyle = '#ff6b6b';
+            ctx.textAlign = 'center';
+            ctx.fillText('Velocity (m/s)', 0, 0);
+            ctx.restore();
+        }
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('graphContainer');
+            if (container.classList.contains('show')) {
+                // Re-run simulation would be needed, or cache data
+            }
+        });
+
+        toggleBurstSection();
+    </script>
+</body>
+</html>
